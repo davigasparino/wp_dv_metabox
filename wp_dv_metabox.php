@@ -6,10 +6,9 @@
      * Author: Davi Gasparino
      * Version: 1.0.0
      * Author URI: http://davigasparino.com.br
-     * GitHub Plugin URI: https://github.com/wp-bootstrap/wp-bootstrap-navwalker
+     * GitHub Plugin URI: https://github.com/davigasparino/wp_dv_metabox
      * GitHub Branch: master
      * License: GPL-3.0+
-     * License URI: http://www.gnu.org/licenses/gpl-3.0.txt
      */
 
     class WpDvMetabox{
@@ -33,8 +32,13 @@
                 $this->args = array_merge($this->args, $args);
             }
 
+            add_action('admin_enqueue_scripts', array( $this, 'restaurant_admin_scripts'));
             add_action('add_meta_boxes', array($this, 'wp_dv_create_metabox'));
             add_action('save_post', array($this, 'wp_dv_save_options'));
+        }
+
+        function restaurant_admin_scripts(){
+            wp_enqueue_style('wp_dv_metabox_style', get_template_directory_uri().'/plugins/wp_dv_metabox/css/style.css');
         }
 
         function wp_dv_create_metabox(){
@@ -46,21 +50,6 @@
                 $this->args['context'],
                 $this->args['priority']
             );
-        }
-
-        function wp_dv_form_builder($post){
-            wp_nonce_field( basename( __FILE__ ), 'dv_restaurant_fields' );
-            ?>
-            <div class="form-group">
-                <?php if(!empty($this->args['fields'])): ?>
-                    <?php foreach($this->args['fields'] as $fields): ?>
-                        <?php $form_value = get_post_meta( $post->ID, $fields['id'], true ); ?>
-                        <label for="<?php echo esc_attr($fields['id']); ?>"><?php echo esc_html($fields['label']); ?></label>
-                        <input class="form-control" id="<?php echo esc_attr($fields['id']); ?>" name="<?php echo esc_attr($fields['id']); ?>" value="<?php echo esc_textarea($form_value); ?>" />
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-            <?php
         }
 
         function wp_dv_save_options($post_id, $post = null){
@@ -95,5 +84,57 @@
 
                 endforeach;
             endforeach;
+        }
+
+        function wp_dv_form_builder($post){
+            wp_nonce_field( basename( __FILE__ ), 'dv_restaurant_fields' );
+            if(!empty($this->args['fields'])):
+                foreach($this->args['fields'] as $fields):
+                    $form_value = get_post_meta( $post->ID, $fields['id'], true );
+                    switch ($fields['type']):
+                        case 'checkbox':
+                            $this->wp_dv_form_builder_checkbox($fields, $form_value);
+                            break;
+
+                        case 'radio':
+                            $this->wp_dv_form_builder_radio($fields, $form_value);
+                            break;
+
+                        default:
+                            $this->wp_dv_form_buider_text($fields, $form_value);
+                            break;
+                    endswitch;
+                endforeach;
+            endif;
+        }
+
+        function wp_dv_form_buider_text($fields, $value){
+            $html = '
+                <div class="form-group">
+                    <label for="'.esc_attr($fields['id']).'">'.esc_html($fields['label']).'</label>
+                    <input class="form-control" type="'.esc_attr($fields['type']).'" id="'.esc_attr($fields['id']).'" name="'.esc_attr($fields['id']).'" value="'.esc_textarea($value).'" />
+                </div>
+            ';
+            echo $html;
+        }
+
+        function wp_dv_form_builder_radio($fields, $value){
+            $html = '<div class="form-group"><label>'.esc_html($fields['label']).'</label><div class="container-radio">';
+            foreach ($fields['options'] as $option_key => $option_value){
+                $checked = ($value == $option_value) ? 'checked' : '';
+                $html .= '<label><input name="'.esc_attr($fields['id']).'" type="'.esc_attr($fields['type']).'" value="'.esc_attr($option_value).'" '.esc_attr($checked).'> '.esc_html($option_key).'</label>';
+            }
+            $html .= '</div></div>';
+            echo $html;
+        }
+
+        function wp_dv_form_builder_checkbox($fields, $value){
+            $html = '<div class="form-group"><label>'.esc_html($fields['label']).'</label><div class="container-radio">';
+            foreach ($fields['options'] as $option_key => $option_value){
+                $checked = ($value == $option_value) ? 'checked' : '';
+                $html .= '<label><input name="'.esc_attr($fields['id']).'" type="'.esc_attr($fields['type']).'" value="'.esc_attr($option_value).'" '.esc_attr($checked).'> '.esc_html($option_key).'</label>';
+            }
+            $html .= '</div></div>';
+            echo $html;
         }
     }

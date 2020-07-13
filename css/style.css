@@ -1,0 +1,13 @@
+.form-group{
+    padding: 5px 0px;
+}
+.form-group .container-radio label {
+    width: 100%;
+    display: inline-block;
+    padding: 6px 0px 0px 10px;
+}
+.form-group input.form-control[type="text"]{
+    width: 100%;
+    padding: 0px 8px;
+    font-size: 15px;
+}
